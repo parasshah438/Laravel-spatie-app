@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Blog;
+use App\Models\Activity;
 use Illuminate\Http\Request;
 
 class BlogController extends Controller

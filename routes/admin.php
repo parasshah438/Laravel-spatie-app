@@ -7,7 +7,9 @@ use App\Http\Controllers\Admin\{
     PermissionController,
     BlogController,
     ServiceController,
-    SliderController
+    SliderController,
+    AdminActivityController,
+    UserAnalyticsController
 };
 
 use App\Http\Controllers\Admin\Auth\LoginController as AdminLoginController;
@@ -78,6 +80,19 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('permissions/seed-basic', 'seedBasicPermissions')->name('permissions.seed-basic');
         });
         
+        // Admin Activity Log routes
+        Route::controller(AdminActivityController::class)->group(function () {
+            Route::get('activities', 'index')->name('activities.index');
+            Route::get('activities/{activity}', 'show')->name('activities.show');
+            Route::delete('activities/clear', 'clear')->name('activities.clear');
+        });
+        
+        // User Analytics routes
+        Route::controller(UserAnalyticsController::class)->group(function () {
+            Route::get('analytics/users', 'index')->name('analytics.users');
+            Route::get('analytics/users/export', 'export')->name('analytics.users.export');
+        });
+        
         // Debug route to check admin permissions
         Route::get('debug-permissions', function () {
             $admin = auth('admin')->user();
@@ -97,8 +112,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::patch('blogs/{blog}/publish', [BlogController::class, 'publish'])->name('blogs.publish');
         Route::patch('blogs/{blog}/unpublish', [BlogController::class, 'unpublish'])->name('blogs.unpublish');
         
-        Route::resource('services', ServiceController::class);
-        Route::resource('sliders', SliderController::class);
+        //Route::resource('services', ServiceController::class);
+        //Route::resource('sliders', SliderController::class);
         
         // Additional Content Management Routes (create controllers as needed)
         // Route::resource('pages', PageController::class);

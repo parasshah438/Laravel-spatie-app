@@ -54,6 +54,30 @@
             </li>
             @endcan
             
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('admin.activities.*') ? 'active' : '' }}" 
+                   href="{{ route('admin.activities.index') }}">
+                    <i class="fas fa-history me-2"></i>
+                    System Activity Log
+                </a>
+            </li>
+            
+            {{-- Analytics Section --}}
+            <li class="nav-item mt-3">
+                <h6 class="sidebar-heading px-3 text-muted text-uppercase">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Analytics & Reports
+                </h6>
+            </li>
+            
+            <li class="nav-item">
+                <a class="nav-link {{ request()->routeIs('admin.analytics.users') ? 'active' : '' }}" 
+                   href="{{ route('admin.analytics.users') }}">
+                    <i class="fas fa-user-chart me-2"></i>
+                    User Registration Analytics
+                </a>
+            </li>
+            
             @can('user-list', auth('admin')->user())
             <li class="nav-item">
                 <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" 

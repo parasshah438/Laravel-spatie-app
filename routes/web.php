@@ -77,5 +77,3 @@ Auth::routes(['register' => true]); // Disable default registration for compatib
 // Admin Routes (Separate Guard)
 require __DIR__.'/admin.php';
 
-// Temporary permission seeder route
-require __DIR__.'/temp-seed.php';
