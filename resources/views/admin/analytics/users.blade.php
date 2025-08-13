@@ -14,9 +14,22 @@
     <button type="button" class="btn btn-outline-primary {{ $dateRange === 'this_month' ? 'active' : '' }}" 
             onclick="setDateRange('this_month')">This Month</button>
 </div>
-<button type="button" class="btn btn-success ms-3" onclick="exportData()">
-    <i class="fas fa-download"></i> Export Data
-</button>
+<div class="btn-group ms-3" role="group">
+    <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown">
+        <i class="fas fa-download"></i> Export Data
+    </button>
+    <ul class="dropdown-menu">
+        <li><a class="dropdown-item" href="#" onclick="exportData('csv')">
+            <i class="fas fa-file-csv me-2"></i>Export as CSV
+        </a></li>
+        <li><a class="dropdown-item" href="#" onclick="exportData('json')">
+            <i class="fas fa-file-code me-2"></i>Export as JSON
+        </a></li>
+        <li><a class="dropdown-item" href="#" onclick="exportData('excel')">
+            <i class="fas fa-file-excel me-2"></i>Export as Excel
+        </a></li>
+    </ul>
+</div>
 @endsection
 
 @section('content')
@@ -322,29 +335,26 @@ function setDateRange(range) {
 }
 
 // Export functionality
-function exportData() {
+function exportData(format = 'csv') {
     const startDate = document.getElementById('start_date').value;
     const endDate = document.getElementById('end_date').value;
     
-    fetch(`{{ route('admin.analytics.users.export') }}?start_date=${startDate}&end_date=${endDate}`)
-        .then(response => response.json())
-        .then(data => {
-            // Create downloadable JSON file
-            const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `user_analytics_${startDate}_to_${endDate}.json`;
-            a.click();
-            window.URL.revokeObjectURL(url);
-            
-            // Show success message
-            alert('Analytics data exported successfully!');
-        })
-        .catch(error => {
-            console.error('Export error:', error);
-            alert('Error exporting data. Please try again.');
-        });
+    // Build the export URL
+    const baseUrl = '{{ route("admin.analytics.users.export") }}';
+    const params = new URLSearchParams({
+        start_date: startDate,
+        end_date: endDate,
+        format: format
+    });
+    
+    // Create and trigger download
+    window.location.href = baseUrl + '?' + params.toString();
+    
+    // Show success message
+    const formatName = format.toUpperCase();
+    setTimeout(() => {
+        alert(`Analytics data exported successfully as ${formatName}!`);
+    }, 500);
 }
 
 // Auto-refresh every 5 minutes if viewing today's data

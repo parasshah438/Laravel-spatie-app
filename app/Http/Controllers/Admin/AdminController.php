@@ -159,8 +159,26 @@ class AdminController extends Controller
      */
     public function users()
     {
-        $users = User::with('roles')->paginate(10);
-        return view('admin.users.index', compact('users'));
+        $users = User::with('roles')
+                    ->orderBy('is_online', 'desc')
+                    ->orderBy('last_login_at', 'desc')
+                    ->paginate(15);
+        
+        $totalUsersCount = User::count();
+        $onlineUsersCount = User::where('is_online', true)->count();
+        $todayRegistrations = User::whereDate('created_at', today())->count();
+        
+        // Calculate login rate (users who have logged in vs total users)
+        $usersWithLogins = User::whereNotNull('last_login_at')->count();
+        $loginRate = $totalUsersCount > 0 ? ($usersWithLogins / $totalUsersCount) * 100 : 0;
+        
+        return view('admin.users.index', compact(
+            'users', 
+            'onlineUsersCount', 
+            'totalUsersCount', 
+            'todayRegistrations',
+            'loginRate'
+        ));
     }
 
     /**

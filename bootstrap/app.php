@@ -16,8 +16,6 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->group(base_path('routes/admin.php'));
             Route::middleware('web')
                 ->group(base_path('routes/customer.php'));
-            Route::middleware('web')
-                ->group(base_path('routes/test.php'));
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
@@ -26,6 +24,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin.auth' => \App\Http\Middleware\AdminMiddleware::class,
             'customer.guest' => \App\Http\Middleware\CustomerGuestMiddleware::class,
             'customer.auth' => \App\Http\Middleware\CustomerMiddleware::class,
+            'track.activity' => \App\Http\Middleware\TrackUserActivity::class,
+        ]);
+        
+        // Add activity tracking to web middleware group
+        $middleware->web(append: [
+            \App\Http\Middleware\TrackUserActivity::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

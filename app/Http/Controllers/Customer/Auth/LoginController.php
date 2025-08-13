@@ -34,11 +34,18 @@ class LoginController extends Controller
         if (Auth::guard('customer')->attempt($credentials, $request->filled('remember'))) {
             $request->session()->regenerate();
 
-            // Log the login activity
+            // Get the authenticated customer
             $customer = Auth::guard('customer')->user();
+            
+            // Update customer login information
+            $customer->updateLoginInfo($request);
+            
+            // Log the login activity
             Activity::log('Customer login', $customer, $customer, [
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
+                'login_time' => now()->toDateTimeString(),
+                'login_method' => 'web'
             ]);
 
             return redirect()->intended('/customer/dashboard');
@@ -56,11 +63,15 @@ class LoginController extends Controller
     {
         $customer = Auth::guard('customer')->user();
         
-        // Log the logout activity before logout
+        // Log the logout activity and mark offline before logout
         if ($customer) {
+            // Mark customer as offline
+            $customer->markOffline();
+            
             Activity::log('Customer logout', $customer, $customer, [
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
+                'logout_time' => now()->toDateTimeString()
             ]);
         }
 

@@ -112,8 +112,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::patch('blogs/{blog}/publish', [BlogController::class, 'publish'])->name('blogs.publish');
         Route::patch('blogs/{blog}/unpublish', [BlogController::class, 'unpublish'])->name('blogs.unpublish');
         
-        //Route::resource('services', ServiceController::class);
-        //Route::resource('sliders', SliderController::class);
+        Route::resource('services', ServiceController::class);
+        Route::resource('sliders', SliderController::class);
         
         // Additional Content Management Routes (create controllers as needed)
         // Route::resource('pages', PageController::class);

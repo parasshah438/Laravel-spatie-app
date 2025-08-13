@@ -34,11 +34,18 @@ class LoginController extends Controller
         if (Auth::guard('admin')->attempt($credentials, $request->filled('remember'))) {
             $request->session()->regenerate();
 
-            // Log the login activity
+            // Get the authenticated admin
             $admin = Auth::guard('admin')->user();
+            
+            // Update admin login information
+            $admin->updateLoginInfo($request);
+            
+            // Log the login activity
             Activity::log('Admin login', $admin, $admin, [
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
+                'login_time' => now()->toDateTimeString(),
+                'login_method' => 'web'
             ]);
 
             return redirect()->intended('/admin/dashboard');
@@ -56,11 +63,15 @@ class LoginController extends Controller
     {
         $admin = Auth::guard('admin')->user();
         
-        // Log the logout activity before logout
+        // Log the logout activity and mark offline before logout
         if ($admin) {
+            // Mark admin as offline
+            $admin->markOffline();
+            
             Activity::log('Admin logout', $admin, $admin, [
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),
+                'logout_time' => now()->toDateTimeString()
             ]);
         }
 

@@ -1,0 +1,294 @@
+@extends('admin.layouts.app')
+
+@section('title', 'User Management')
+@section('page-title', 'User Management')
+
+@section('top-buttons')
+<div class="btn-group" role="group">
+    <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#userStatsModal">
+        <i class="fas fa-chart-bar"></i> Statistics
+    </button>
+    <button type="button" class="btn btn-outline-success" onclick="refreshPage()">
+        <i class="fas fa-sync-alt"></i> Refresh
+    </button>
+</div>
+@endsection
+
+@section('content')
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Total Users</h5>
+                        <h2 class="mb-0">{{ number_format($totalUsersCount ?? 0) }}</h2>
+                    </div>
+                    <i class="fas fa-users fa-3x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Online Now</h5>
+                        <h2 class="mb-0">{{ number_format($onlineUsersCount ?? 0) }}</h2>
+                    </div>
+                    <i class="fas fa-circle fa-3x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Today's Registrations</h5>
+                        <h2 class="mb-0">{{ number_format($todayRegistrations ?? 0) }}</h2>
+                    </div>
+                    <i class="fas fa-user-plus fa-3x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Login Rate</h5>
+                        <h2 class="mb-0">{{ number_format($loginRate ?? 0, 1) }}%</h2>
+                    </div>
+                    <i class="fas fa-sign-in-alt fa-3x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Users Table -->
+<div class="card">
+    <div class="card-header">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h5 class="mb-0">User Management</h5>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex justify-content-end">
+                    <div class="input-group me-3" style="width: 300px;">
+                        <input type="text" class="form-control" placeholder="Search users..." id="searchInput">
+                        <button class="btn btn-outline-secondary" type="button">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="usersTable">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>User</th>
+                        <th>Email</th>
+                        <th>Status</th>
+                        <th>Online Status</th>
+                        <th>Last Login</th>
+                        <th>Registered</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($users ?? [] as $user)
+                    <tr class="{{ ($user->is_online ?? false) ? 'table-success' : '' }}">
+                        <td>
+                            <strong class="text-primary">#{{ $user->id }}</strong>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-sm {{ ($user->is_online ?? false) ? 'bg-success' : 'bg-primary' }} text-white rounded-circle d-flex align-items-center justify-content-center me-2">
+                                    {{ strtoupper(substr($user->name, 0, 1)) }}
+                                </div>
+                                <div>
+                                    <strong>{{ $user->name }}</strong>
+                                    <br><small class="text-muted">User</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div>
+                                {{ $user->email }}
+                                @if($user->email_verified_at)
+                                    <i class="fas fa-check-circle text-success ms-1" title="Verified"></i>
+                                @endif
+                            </div>
+                        </td>
+                        <td>
+                            @if($user->email_verified_at)
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check-circle"></i> Verified
+                                </span>
+                            @else
+                                <span class="badge bg-warning">
+                                    <i class="fas fa-exclamation-triangle"></i> Unverified
+                                </span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($user->is_online ?? false)
+                                <span class="badge bg-success">
+                                    <i class="fas fa-circle"></i> Online
+                                </span>
+                                <br><small class="text-muted">Active now</small>
+                            @else
+                                <span class="badge bg-secondary">
+                                    <i class="fas fa-circle"></i> Offline
+                                </span>
+                                @if(isset($user->last_seen_at) && $user->last_seen_at)
+                                    <br><small class="text-muted">{{ $user->last_seen_at->diffForHumans() }}</small>
+                                @endif
+                            @endif
+                        </td>
+                        <td>
+                            @if(isset($user->last_login_at) && $user->last_login_at)
+                                <small>{{ $user->last_login_at->format('M d, Y H:i') }}</small><br>
+                                <small class="text-muted">{{ $user->last_login_at->diffForHumans() }}</small>
+                            @else
+                                <small class="text-muted">Never logged in</small>
+                            @endif
+                        </td>
+                        <td>
+                            <small>{{ $user->created_at->format('M d, Y') }}</small><br>
+                            <small class="text-muted">{{ $user->created_at->diffForHumans() }}</small>
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-info btn-sm" onclick="viewUser({{ $user->id }})" title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-warning btn-sm" onclick="editUser({{ $user->id }})" title="Edit User">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                @if($user->is_online ?? false)
+                                    <button class="btn btn-danger btn-sm" onclick="forceLogoutUser({{ $user->id }})" title="Force Logout">
+                                        <i class="fas fa-sign-out-alt"></i>
+                                    </button>
+                                @endif
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="8" class="text-center py-5">
+                            <div class="text-muted">
+                                <i class="fas fa-users fa-3x mb-3"></i>
+                                <h5>No Users Found</h5>
+                                <p>No users are registered in the system yet.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        @if(isset($users) && method_exists($users, 'links'))
+        <div class="d-flex justify-content-between align-items-center p-3 border-top">
+            <div class="text-muted">
+                Showing {{ $users->firstItem() ?? 0 }} to {{ $users->lastItem() ?? 0 }} of {{ $users->total() }} users
+            </div>
+            <div>
+                {{ $users->links() }}
+            </div>
+        </div>
+        @endif
+    </div>
+</div>
+@endsection
+
+@push('scripts')
+<script>
+function refreshPage() {
+    window.location.reload();
+}
+
+function viewUser(userId) {
+    alert('View user details for ID: ' + userId + '\nThis feature will be implemented soon!');
+}
+
+function editUser(userId) {
+    alert('Edit user for ID: ' + userId + '\nThis feature will be implemented soon!');
+}
+
+function forceLogoutUser(userId) {
+    if (confirm('Are you sure you want to force logout this user?')) {
+        alert('Force logout user ID: ' + userId + '\nThis feature will be implemented soon!');
+    }
+}
+
+// Simple search functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('keyup', function() {
+            const searchTerm = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#usersTable tbody tr');
+            
+            rows.forEach(row => {
+                if (row.cells.length > 1) {
+                    const name = row.cells[1].textContent.toLowerCase();
+                    const email = row.cells[2].textContent.toLowerCase();
+                    
+                    if (name.includes(searchTerm) || email.includes(searchTerm)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            });
+        });
+    }
+});
+</script>
+@endpush
+
+@push('styles')
+<style>
+.avatar-sm {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.table-success {
+    --bs-table-bg: rgba(25, 135, 84, 0.1);
+}
+
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.badge {
+    font-size: 0.75em;
+}
+
+.table th {
+    font-weight: 600;
+}
+
+.table td {
+    vertical-align: middle;
+}
+</style>
+@endpush

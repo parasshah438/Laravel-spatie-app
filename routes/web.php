@@ -58,22 +58,8 @@ Route::prefix('user')->name('user.')->group(function () {
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
 Route::get('/home/stats', [App\Http\Controllers\HomeController::class, 'getStats'])->name('home.stats')->middleware('auth');
 
-// Debug routes for troubleshooting
-Route::get('/test-admin', function () {
-    return 'Admin route system is working. <a href="/admin">Try /admin</a> | <a href="/admin/login">Try /admin/login</a>';
-});
-
-Route::get('/test-admin-login', function () {
-    try {
-        return view('admin.auth.login');
-    } catch (\Exception $e) {
-        return 'Error loading admin login view: ' . $e->getMessage();
-    }
-});
-
 // Backward compatibility routes
 Auth::routes(['register' => true]); // Disable default registration for compatibility
 
 // Admin Routes (Separate Guard)
 require __DIR__.'/admin.php';
-

@@ -1,5 +1,4 @@
 @extends('admin.layouts.app')
-
 @section('title', 'User Management')
 @section('page-title', 'User Management')
 
@@ -8,14 +7,77 @@
     <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#userStatsModal">
         <i class="fas fa-chart-bar"></i> Statistics
     </button>
-    <a href="#" class="btn btn-success" onclick="alert('User creation will be implemented soon!')">
-        <i class="fas fa-plus"></i> Add New User
-    </a>
+    <button type="button" class="btn btn-outline-success" onclick="refreshPage()">
+        <i class="fas fa-sync-alt"></i> Refresh
+    </button>
 </div>
 @endsection
 
 @section('content')
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Total Users</h5>
+                        <h2 class="mb-0">{{ number_format($totalUsersCount) }}</h2>
+                    </div>
+                    <i class="fas fa-users fa-3x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Online Now</h5>
+                        <h2 class="mb-0">{{ number_format($onlineUsersCount) }}</h2>
+                        <small class="text-light">Active in last 5 min</small>
+                    </div>
+                    <i class="fas fa-circle fa-3x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Joined Today</h5>
+                        <h2 class="mb-0">{{ number_format($todayRegistrations) }}</h2>
+                    </div>
+                    <i class="fas fa-user-plus fa-3x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title">Login Rate</h5>
+                        <h2 class="mb-0">{{ $totalUsersCount > 0 ? round(($onlineUsersCount / $totalUsersCount) * 100, 1) : 0 }}%</h2>
+                    </div>
+                    <i class="fas fa-percentage fa-3x opacity-75"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="card shadow">
+    <div class="card-header">
+        <h5 class="card-title mb-0">User Management</h5>
+    </div>
     <div class="card-body">
         <!-- Search and Filter Section -->
         <div class="row mb-3">
@@ -29,9 +91,9 @@
             </div>
             <div class="col-md-6 text-end">
                 <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="filterByStatus('all')">All</button>
-                    <button type="button" class="btn btn-outline-success btn-sm" onclick="filterByStatus('verified')">Verified</button>
-                    <button type="button" class="btn btn-outline-warning btn-sm" onclick="filterByStatus('unverified')">Unverified</button>
+                    <button type="button" class="btn btn-outline-primary btn-sm active" onclick="filterByStatus('all')">All</button>
+                    <button type="button" class="btn btn-outline-success btn-sm" onclick="filterByStatus('online')">Online</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="filterByStatus('offline')">Offline</button>
                 </div>
             </div>
         </div>
@@ -40,91 +102,127 @@
             <table class="table table-bordered table-hover" id="usersTable">
                 <thead class="table-dark">
                     <tr>
-                        <th>ID</th>
-                        <th>Name</th>
+                        <th>Status</th>
+                        <th>User</th>
                         <th>Email</th>
                         <th>Roles</th>
-                        <th>Email Verified</th>
-                        <th>Joined Date</th>
-                        <th>Last Active</th>
+                        <th>Login Info</th>
+                        <th>Activity</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($users as $user)
-                    <tr>
-                        <td>{{ $user->id }}</td>
+                    <tr data-status="{{ $user->isOnline() ? 'online' : 'offline' }}">
                         <td>
-                            <div class="d-flex align-items-center">
-                                <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2">
-                                    {{ strtoupper(substr($user->name, 0, 1)) }}
-                                </div>
-                                <strong>{{ $user->name }}</strong>
-                            </div>
-                        </td>
-                        <td>{{ $user->email }}</td>
-                        <td>
-                            @forelse($user->roles as $role)
-                                <span class="badge bg-primary me-1">{{ ucfirst($role->name) }}</span>
-                            @empty
-                                <span class="badge bg-secondary">No Role</span>
-                            @endforelse
-                        </td>
-                        <td>
-                            @if($user->email_verified_at)
+                            @if($user->isOnline())
                                 <span class="badge bg-success">
-                                    <i class="fas fa-check-circle"></i> Verified
+                                    <i class="fas fa-circle"></i> Online
                                 </span>
                             @else
-                                <span class="badge bg-warning">
-                                    <i class="fas fa-exclamation-triangle"></i> Unverified
+                                <span class="badge bg-secondary">
+                                    <i class="fas fa-circle"></i> Offline
                                 </span>
                             @endif
                         </td>
                         <td>
-                            <small>{{ $user->created_at->format('M d, Y') }}</small><br>
-                            <small class="text-muted">{{ $user->created_at->diffForHumans() }}</small>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-sm me-2">
+                                    <div class="avatar-initial bg-primary rounded-circle">
+                                        {{ strtoupper(substr($user->name, 0, 1)) }}
+                                    </div>
+                                </div>
+                                <div>
+                                    <strong>{{ $user->name }}</strong><br>
+                                    <small class="text-muted">ID: {{ $user->id }}</small>
+                                </div>
+                            </div>
                         </td>
                         <td>
-                            <small>{{ $user->updated_at->format('M d, Y') }}</small><br>
-                            <small class="text-muted">{{ $user->updated_at->diffForHumans() }}</small>
+                            {{ $user->email }}
+                            @if($user->email_verified_at)
+                                <br><small class="text-success">
+                                    <i class="fas fa-check-circle"></i> Verified
+                                </small>
+                            @else
+                                <br><small class="text-warning">
+                                    <i class="fas fa-exclamation-triangle"></i> Unverified
+                                </small>
+                            @endif
+                        </td>
+                        <td>
+                            @if($user->roles->count() > 0)
+                                @foreach($user->roles as $role)
+                                    <span class="badge bg-info me-1">{{ $role->name }}</span>
+                                @endforeach
+                            @else
+                                <span class="text-muted">No roles assigned</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($user->last_login_at)
+                                <small>
+                                    <strong>Last Login:</strong><br>
+                                    {{ $user->last_login_at->diffForHumans() }}<br>
+                                    <span class="text-muted">{{ $user->last_login_at->format('M j, Y H:i') }}</span><br>
+                                    
+                                    @if($user->last_login_ip)
+                                        <strong>IP:</strong> {{ $user->last_login_ip }}<br>
+                                    @endif
+                                    
+                                    <strong>Logins:</strong> {{ $user->login_count ?? 0 }}
+                                </small>
+                            @else
+                                <span class="text-muted">Never logged in</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($user->last_activity_at)
+                                <small>
+                                    <strong>Last Activity:</strong><br>
+                                    {{ $user->last_activity_at->diffForHumans() }}<br>
+                                    <span class="text-muted">{{ $user->last_activity_at->format('M j, Y H:i') }}</span>
+                                </small>
+                            @else
+                                <span class="text-muted">No activity</span>
+                            @endif
+                            <br>
+                            <small class="text-muted">
+                                <strong>Joined:</strong> {{ $user->created_at->format('M j, Y') }}
+                            </small>
                         </td>
                         <td>
                             <div class="btn-group" role="group">
-                                <button class="btn btn-info btn-sm" onclick="viewUser({{ $user->id }})" title="View Details">
-                                    <i class="fas fa-eye"></i>
+                                <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" 
+                                        data-bs-toggle="dropdown">
+                                    <i class="fas fa-cog"></i>
                                 </button>
-                                <button class="btn btn-warning btn-sm" onclick="editUser({{ $user->id }})" title="Edit User">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <div class="dropdown">
-                                    <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                        <i class="fas fa-cogs"></i>
-                                    </button>
-                                    <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="#" onclick="toggleUserStatus({{ $user->id }})">
-                                            <i class="fas fa-user-slash"></i> Toggle Status
-                                        </a></li>
-                                        <li><a class="dropdown-item" href="#" onclick="resetUserPassword({{ $user->id }})">
-                                            <i class="fas fa-key"></i> Reset Password
-                                        </a></li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item text-danger" href="#" onclick="deleteUser({{ $user->id }})">
-                                            <i class="fas fa-trash"></i> Delete User
-                                        </a></li>
-                                    </ul>
-                                </div>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="#" onclick="viewUser({{ $user->id }})">
+                                        <i class="fas fa-eye me-2"></i>View Details
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="editUser({{ $user->id }})">
+                                        <i class="fas fa-edit me-2"></i>Edit User
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="#" onclick="viewLoginHistory({{ $user->id }})">
+                                        <i class="fas fa-history me-2"></i>Login History
+                                    </a></li>
+                                    @if($user->isOnline())
+                                    <li><a class="dropdown-item text-warning" href="#" onclick="forceLogout({{ $user->id }})">
+                                        <i class="fas fa-sign-out-alt me-2"></i>Force Logout
+                                    </a></li>
+                                    @endif
+                                </ul>
                             </div>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="text-center py-4">
-                            <div class="text-muted">
-                                <i class="fas fa-users fa-3x mb-3"></i>
-                                <h5>No Users Found</h5>
-                                <p>No users are registered in the system yet.</p>
-                            </div>
+                        <td colspan="7" class="text-center py-4">
+                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No users found</h5>
+                            <p class="text-muted">There are no users to display.</p>
                         </td>
                     </tr>
                     @endforelse
@@ -132,130 +230,156 @@
             </table>
         </div>
         
-        <div class="d-flex justify-content-between align-items-center mt-3">
-            <div class="text-muted">
-                Showing {{ $users->firstItem() ?? 0 }} to {{ $users->lastItem() ?? 0 }} of {{ $users->total() }} users
+        <!-- Pagination -->
+        @if($users->hasPages())
+        <div class="d-flex justify-content-between align-items-center mt-4">
+            <div class="pagination-info">
+                <span class="text-muted">
+                    Showing {{ $users->firstItem() ?? 0 }} to {{ $users->lastItem() ?? 0 }} 
+                    of {{ $users->total() }} users
+                </span>
             </div>
-            <div>
-                {{ $users->links() }}
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- User Statistics Modal -->
-<div class="modal fade" id="userStatsModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">User Statistics</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-3 text-center">
-                        <div class="bg-primary text-white rounded p-3">
-                            <i class="fas fa-users fa-2x mb-2"></i>
-                            <h4>{{ $users->total() }}</h4>
-                            <small>Total Users</small>
-                        </div>
-                    </div>
-                    <div class="col-md-3 text-center">
-                        <div class="bg-success text-white rounded p-3">
-                            <i class="fas fa-check-circle fa-2x mb-2"></i>
-                            <h4>{{ $users->filter(function($user) { return $user->email_verified_at !== null; })->count() }}</h4>
-                            <small>Verified</small>
-                        </div>
-                    </div>
-                    <div class="col-md-3 text-center">
-                        <div class="bg-warning text-white rounded p-3">
-                            <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
-                            <h4>{{ $users->filter(function($user) { return $user->email_verified_at === null; })->count() }}</h4>
-                            <small>Unverified</small>
-                        </div>
-                    </div>
-                    <div class="col-md-3 text-center">
-                        <div class="bg-info text-white rounded p-3">
-                            <i class="fas fa-calendar fa-2x mb-2"></i>
-                            <h4>{{ $users->filter(function($user) { return $user->created_at >= now()->subDays(30); })->count() }}</h4>
-                            <small>New (30 days)</small>
-                        </div>
-                    </div>
-                </div>
+            <div class="pagination-links">
+                {{ $users->links('pagination.bootstrap-5') }}
             </div>
         </div>
+        @endif
     </div>
 </div>
-@endsection
 
 @push('scripts')
 <script>
-function viewUser(userId) {
-    alert('View user details for ID: ' + userId + '\nThis feature will be implemented soon!');
-}
-
-function editUser(userId) {
-    alert('Edit user for ID: ' + userId + '\nThis feature will be implemented soon!');
-}
-
-function toggleUserStatus(userId) {
-    if (confirm('Are you sure you want to toggle this user\'s status?')) {
-        alert('Toggle status for user ID: ' + userId + '\nThis feature will be implemented soon!');
-    }
-}
-
-function resetUserPassword(userId) {
-    if (confirm('Are you sure you want to reset this user\'s password?')) {
-        alert('Reset password for user ID: ' + userId + '\nThis feature will be implemented soon!');
-    }
-}
-
-function deleteUser(userId) {
-    if (confirm('Are you sure you want to delete this user? This action cannot be undone!')) {
-        alert('Delete user ID: ' + userId + '\nThis feature will be implemented soon!');
-    }
-}
-
-function filterByStatus(status) {
-    // Simple client-side filtering for demo
-    const rows = document.querySelectorAll('#usersTable tbody tr');
-    rows.forEach(row => {
-        if (status === 'all') {
-            row.style.display = '';
-        } else if (status === 'verified') {
-            const verified = row.querySelector('.badge.bg-success');
-            row.style.display = verified ? '' : 'none';
-        } else if (status === 'unverified') {
-            const unverified = row.querySelector('.badge.bg-warning');
-            row.style.display = unverified ? '' : 'none';
+// Auto-refresh page every 30 seconds for real-time updates
+setInterval(function() {
+    if (document.visibilityState === 'visible') {
+        // Only refresh if no modals are open
+        if (!document.querySelector('.modal.show')) {
+            window.location.reload();
         }
-    });
-}
+    }
+}, 30000);
 
-// Simple search functionality
-document.getElementById('searchInput').addEventListener('keyup', function() {
+// Search functionality
+document.getElementById('searchInput').addEventListener('input', function() {
     const searchTerm = this.value.toLowerCase();
     const rows = document.querySelectorAll('#usersTable tbody tr');
     
     rows.forEach(row => {
-        const name = row.cells[1].textContent.toLowerCase();
-        const email = row.cells[2].textContent.toLowerCase();
-        
-        if (name.includes(searchTerm) || email.includes(searchTerm)) {
-            row.style.display = '';
-        } else {
-            row.style.display = 'none';
-        }
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
     });
 });
-</script>
 
+// Filter functionality
+function filterByStatus(status) {
+    // Update active button
+    document.querySelectorAll('.btn-group .btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    const rows = document.querySelectorAll('#usersTable tbody tr[data-status]');
+    
+    rows.forEach(row => {
+        if (status === 'all') {
+            row.style.display = '';
+        } else {
+            row.style.display = row.dataset.status === status ? '' : 'none';
+        }
+    });
+}
+
+// Action functions
+function viewUser(userId) {
+    alert('View user details for ID: ' + userId + ' - Feature coming soon!');
+}
+
+function editUser(userId) {
+    alert('Edit user for ID: ' + userId + ' - Feature coming soon!');
+}
+
+function viewLoginHistory(userId) {
+    alert('View login history for user ID: ' + userId + ' - Feature coming soon!');
+}
+
+function forceLogout(userId) {
+    if (confirm('Are you sure you want to force logout this user?')) {
+        alert('Force logout for user ID: ' + userId + ' - Feature coming soon!');
+    }
+}
+
+function refreshPage() {
+    window.location.reload();
+}
+</script>
+@endpush
+
+@push('styles')
 <style>
 .avatar-sm {
     width: 32px;
     height: 32px;
-    font-size: 14px;
-    font-weight: bold;
+}
+
+.avatar-initial {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.card {
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.opacity-75 {
+    opacity: 0.75;
+}
+
+.table th {
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.badge {
+    font-size: 0.75rem;
+}
+
+.pagination-info {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+.pagination-links .pagination {
+    margin-bottom: 0;
+}
+
+/* Responsive pagination layout */
+@media (max-width: 768px) {
+    .d-flex.justify-content-between.align-items-center {
+        flex-direction: column-reverse;
+        gap: 1rem;
+    }
+    
+    .pagination-info {
+        text-align: center;
+        width: 100%;
+    }
+    
+    .pagination-links {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
 }
 </style>
 @endpush
+@endsection
+                    
